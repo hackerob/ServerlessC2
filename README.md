@@ -7,14 +7,14 @@ Serverless C2 is a completely serverless command and control platform utilizing 
 
 It is recommended that you install Serverless C2 in it's own AWS account or at least not alongside other important AWS infrastructure.
 
-From an AWS CloudShell session:
+From an AWS CloudShell session in us-east-1:
 
-1.
+1. Clone this repo.
 ```
 git clone https://github.com/hackerob/ServerlessC2.git
 ```
 
-2.
+2. Create Serverless C2 instance specifying an email address to be the first user.
 
 ```
 python3 CloudDeploy.py build jim@gmail.com
