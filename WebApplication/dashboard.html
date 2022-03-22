@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link href="css/halfmoon-variables.css" rel="stylesheet">
+    <title>Dashboard</title>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="navbar-content m-auto">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="dashboard.html">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="payloads.html">Payloads</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="settings.html">Settings</a>
+        </li>
+        <li class="nav-item">
+          <button class="btn nav-link" type="button" onclick=logOut()>Logout</button>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <!-- Main Content -->
+  <div class="card">
+    <div class="w-75 mx-auto" id="app">
+        <h1 class="text-center">Serverless C2 Dashboard</h1>
+    </div>
+    <div>
+      <table class="table">
+        <thead class="table-dark"><tr>
+          <th><span id="name" class="w3-button table-column">HostID <i class="caret"></span></th>
+          <th><span id="quantity" class="w3-button table-column">Birthtime <i class="caret"></span></th>
+          <th><span id="price" class="w3-button table-column">Heartbeat <i class="caret"></span></th>
+          <th><span id="expiry" class="w3-button table-column">Public Source IP <i class="caret"></span></th>
+        </tr></thead>
+        <tbody id="dashboardTable"></tbody>
+      </table>
+    </div>
+  </div>
+  <script src="js/vendor/aws-cognito-sdk.min.js"></script>
+  <script src="js/vendor/amazon-cognito-identity.min.js"></script>
+  <script src="js/vendor/aws-sdk.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/cognito.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

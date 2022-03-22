@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Halfmoon CSS -->
+    <link href="css/halfmoon-variables.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/custom.css" rel="stylesheet">
+    <title>Login</title>
+</head>
+<body class="">
+    <!-- Form Modal Section -->
+    <div class="modal" id="modal-2" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <a href="#" class="btn close" role="button" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </a>
+            <h5 class="modal-title">Reset Password</h5>
+            <form id="resetPassword">
+                <div class="form-group">
+                    <label for="password" class="required">New Password</label>
+                    <input type="password" id="passwordReset" class="form-control" placeholder="Password" required="required">
+                </div>
+                <input class="btn btn-primary btn-block" type="submit" value="Submit">
+            </form>
+        </div>
+        </div>
+    </div>
+    <!-- Main Content -->
+    <main class="col-sm">
+        <div id="noCognitoMessage" class="configMessage" style="display: none;">
+            <div class="backdrop"></div>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">No Cognito User Pool Configured</h3>
+                </div>
+                <div class="panel-body">
+                    <p>There is no user pool configured in <a href="js/config.js">/js/config.js</a>. You'll configure this in Module 2 of the workshop.</p>
+                </div>
+            </div>
+        </div>
+        <div class="m-auto w-400">
+            <br>
+            <div class="row">		
+                  <img src="./img/logo.png" class="img-fluid">
+            </div>
+            <form id="signinForm" class="text-center">
+                <!-- <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1> -->
+                <br>
+                <label for="inputEmail" class="sr-only">Email address</label>
+                <input type="text" id="emailInputSignin" class="form-control" placeholder="Email address" required="" autofocus="">
+                <br>
+                <label for="inputPassword" class="sr-only">Password</label>
+                <input type="password" id="passwordInputSignin" class="form-control" placeholder="Password" required="">
+                <br>
+                <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+            </form>
+        </div>
+    </main>
+    <script src="js/vendor/aws-cognito-sdk.min.js"></script>
+    <script src="js/vendor/amazon-cognito-identity.min.js"></script>
+    <script src="js/vendor/aws-sdk.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/cognito.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>
