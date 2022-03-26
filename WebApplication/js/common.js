@@ -5,11 +5,11 @@ document.body.classList.add("dark-mode");
 function basicHTMLEncode(str) {
     if(str && typeof str === 'string') {
         //replace bad characters, this small list of 5 was taken from OWASP
-        str = str.replace(/&/g, '&amp');
-        str = str.replace(/</g, '&lt');
-        str = str.replace(/>/g, '&gt');
-        str = str.replace(/"/g, '&quot');
-        str = str.replace(/'/g, '&#x27');
+        str = str.replace(/&/g, '&amp;');
+        str = str.replace(/</g, '&lt;');
+        str = str.replace(/>/g, '&gt;');
+        str = str.replace(/"/g, '&quot;');
+        str = str.replace(/'/g, '&#x27;');
     }
     return str;
 }
