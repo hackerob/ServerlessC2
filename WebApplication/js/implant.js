@@ -6,7 +6,10 @@ var url = _config.api.ManagementUrl + hostid
 var table = document.getElementById('mytable');
 var collapse = document.getElementById('mycollapse');
 var hostIDHeader = document.getElementById('hostID-header');
+var birthtimeHeader = document.getElementById('birthtime-header');
 var heartbeatHeader = document.getElementById('heartbeat-header');
+var publicipHeader = document.getElementById('public-ip-header');
+var useragentHeader = document.getElementById('user-agent-header');
 var input = document.getElementById('myinput');
 
 
@@ -97,7 +100,10 @@ function populateCollapse(tableData) {
 //Other implant info
 function populateGeneral(tableData) {
     hostIDHeader.innerHTML = basicHTMLEncode(tableData.hostid);
+    birthtimeHeader.innerHTML = "Birthtime - " + epoch2human(basicHTMLEncode(tableData.birthtime));
     heartbeatHeader.innerHTML = "Heartbeat - " + epoch2human(basicHTMLEncode(tableData.heartbeat));
+    publicipHeader.innerHTML = "Public IP - " + basicHTMLEncode(tableData.public_ip_source);
+    //useragentHeader.innerHTML = "User Agent - " + basicHTMLEncode(tableData.user_agent);
 
 }
 
@@ -122,9 +128,7 @@ async function getJSON() {
 
 
 //sendTask
-async function sendTask(event) {
-    console.log(document.getElementById("inputTask").value)
-    var task = document.getElementById("inputTask").value;
+async function sendTask(task) {
     if (task == "") {
 
     }
@@ -142,14 +146,44 @@ async function sendTask(event) {
             "mode": "cors"
         })
         const resp2 = await resp.text();
-        alert("New task " + resp2 + " queued for host id " + hostid.split("=")[1]);
+        //alert("New task " + resp2 + " queued for host id " + hostid.split("=")[1]);
         document.getElementById("inputTask").value = "";
     }
 }
 
+//sendTaskAmsi
+async function sendTaskAmsi() {
+    var url = _config.api.ManagementUrl + "sendTask/amsi"
+    const resp = await fetch(url, {
+        "headers": {
+            "Authorization": bearer,
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        "body": JSON.stringify({"hostid":hostid.split("=")[1]}),
+        "method": "POST",
+        "withCredentials": true,
+        "mode": "cors"
+    })
+    const resp2 = await resp.text();
+}
+
+//not sure if we will keep the task splitter. Doesnt really fix the AMSI problem at all.
+function sendTaskHandler(){
+    if (taskSelection.value == "basic-command") {
+        console.log(document.getElementById("inputTask").value)
+        var task = document.getElementById("inputTask").value;
+        sendTask(task);
+    }
+    else if (taskSelection.value == "amsi-bypass") {
+        sendTaskAmsi();
+    }
+
+}
+
 //listens for form submit
 const submitTaskForm = document.getElementById('implantSendTask');
-submitTaskForm.addEventListener('submit', function(event){event.preventDefault();sendTask();});
+submitTaskForm.addEventListener('submit', function(event){event.preventDefault();sendTaskHandler();});
 
 
 function toggleCollapse() {
@@ -167,11 +201,37 @@ function toggleCollapse() {
     }
 }
 
+function toggleWidth() {
+    if (toggleFullWidth.checked) {
+        document.getElementById("inputTask").style = null
+        document.getElementById("basic-command-div").setAttribute("class", "text-center m-auto w-800")
+    }
+    else {
+        document.getElementById("inputTask").style = null
+        document.getElementById("basic-command-div").setAttribute("class", "text-center m-auto w-400")
+    }
+}
+
+function taskDisplayChange() {
+    if (taskSelection.value == "basic-command"){
+        document.getElementById("basic-command-div").style.display = "block"
+    }
+    else {
+        document.getElementById("basic-command-div").style.display = "none"
+    }
+}
+
+const taskSelection = document.getElementById('select-task');
+taskSelection.onchange = function(){taskDisplayChange()};
+
 
 const toggleClicked = document.getElementById('switch-collapse');
 const toggleSortAge = document.getElementById('switch-oldest');
+const toggleFullWidth = document.getElementById('switch-full-width');
+
 toggleClicked.onclick = function(){toggleCollapse()};
 toggleSortAge.onclick = function(){alert("Not configured yet")};
+toggleFullWidth.onclick = function(){toggleWidth()};
 
 //refresh every 5 seconds (maybe have this configurable?)
 getJSON();

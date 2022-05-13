@@ -34,28 +34,42 @@
   <div class="col-lg" >
     <div id="implant-general-info">
       <div class="card text-center">
-        <div class="card-header" >
+        <div class="mx-auto">
+          <h2 class="text" id="hostID-header"></h5>
         </div>
-        <div class="card-body">
-          <h5 class="card-title" id="hostID-header"></h5>
+        <div class="card-body  text-center">
           <p class="card-text"></p>
         </div>
-        <div class="card-footer text-muted" id="heartbeat-header">
-        </div>
+        <div id="birthtime-header" class="card-footer text-muted"></div>
+        <div id="heartbeat-header" class="text-success"></div>
+        <div id="public-ip-header" class="card-footer text-muted text-center"></div>
       </div>
     </div>
-    <div class="w-800 card">
+    <div class="w-800 card text-center">
+      <div class="mx-auto">
+        <h1 class="text-center">Task Implant</h1>
+      </div>
       <form id="implantSendTask">
-        <label>Send Task</label>
+        <select class="form-control m-auto w-400" id="select-task">
+          <option value="basic-command" selected="selected">Basic Command</option>
+          <option value="amsi-bypass">AMSI Bypass</option>
+          <option value="execute-assembly" disabled="disabled">Execute Assembly</option>
+          <option value="upload-file" disabled="disabled">Upload File</option>
+          <option value="download-file" disabled="disabled">Download File</option>
+        </select>
         <div class="form-group row">
           <div class="col-sm-10">
             <input type="text" hidden class="form-control-plaintext" id="inputHostID"></input>
           </div>
         </div>
-        <div class="form-group row">
-          <label class="col-sm-2 col-form-label">Command</label>
-          <div class="col-sm-10">
-            <!-- <input type="textarea" class="form-control" id="inputTask" placeholder="whoami"> -->
+        <div class="text-center">
+          <div class="text-center m-auto w-400" id="basic-command-div">
+            <div class="custom-switch d-inline-block mr-10">
+              <input type="checkbox" id="switch-full-width" value="">
+              <label for="switch-full-width">Full Width</label>
+            </div>
+            <br>
+            <br>
             <textarea class="form-control" id="inputTask" placeholder="whoami"></textarea>
           </div>
         </div>
