@@ -13,7 +13,6 @@ while True:
             req = request.Request(url + 'agent-registration')
             response = request.urlopen(req)
             agentid = response.read().decode()
-            print(agentid)
         else:
             req =  request.Request(url + "?hostid=" + agentid)
             response = request.urlopen(req)
