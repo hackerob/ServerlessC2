@@ -152,9 +152,14 @@ async function sendTask(task) {
 }
 
 function sendTaskHandler(){
-    console.log(document.getElementById("inputTask").value)
-    var task = document.getElementById("inputTask").value;
-    sendTask(task);
+    if (taskSelection.value == "basic-command") {
+        console.log(document.getElementById("inputTask").value)
+        var task = document.getElementById("inputTask").value;
+        sendTask(task);
+    }
+    else if (taskSelection.value == "amsi-rasta-custom") {
+        sendTask("amsi-rasta-custom");
+    }
 }
 
 //listens for form submit
