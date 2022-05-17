@@ -6,6 +6,7 @@ import time
 import re
 import argparse
 import sys
+import json
 
 #Authenticate
 session = boto3.Session()
@@ -163,7 +164,7 @@ def cloudformation_getoutputs(newbucketname):
 def cloudformation_webapp_getoutputs(newbucketname):
     response = cloudformation.describe_stacks(StackName=newbucketname)
     outputs = response['Stacks'][0]['Outputs']
-    print("Serverless C2 has been deployed! Go to the following URL: https://" + outputs[0]['OutputValue'])
+    return 'https://' + outputs[0]['OutputValue']
 
 def cloudformation_delete(bucketname):
     response = cloudformation.delete_stack(
@@ -182,30 +183,42 @@ def build_c2(email):
     cloudformation_getoutputs(newbucketname)
     uploadto_webappbucket(webapp_bucket)
     cloudformation_getstatus(webapp_bucket)
-    cloudformation_webapp_getoutputs(webapp_bucket)
+    url = cloudformation_webapp_getoutputs(webapp_bucket)
+    print(f"Serverless C2 has been deployed! Go to the following URL: {url}")
 
-def destroy_c2(deploymentID):  
-    delete_bucket(deploymentID)
+def destroy_c2(deploymentID):
+    deployment_id = "serverless-c2-deployment-" + deploymentID.split("-")[-1]
+    delete_bucket(deployment_id)
     payload_id = "serverless-c2-payloads-" + deploymentID.split("-")[-1]
     delete_bucket(payload_id)
     webapp_bucket = 'serverless-c2-webapp-' + deploymentID.split("-")[-1]
     delete_bucket(webapp_bucket)
     cloudformation_delete(webapp_bucket)
-    cloudformation_delete(deploymentID)
+    cloudformation_delete(deployment_id)
 
 def list_deployments():
-    deployment_buckets = []
+    deployment_buckets = {}
     response = s3.list_buckets()
     for bucket in response['Buckets']:
         if bucket["Name"].startswith('serverless-c2-deployment-'):
-            print(bucket["Name"])
+            id = bucket['Name'].split("-")[-1]
+            deployment_buckets[id] = {}
+            deployment_buckets[id]['Deployment Bucket'] = bucket['Name']
+            for other_bucket in response['Buckets']:
+                if other_bucket['Name'] == f"serverless-c2-payloads-{id}":
+                    deployment_buckets[id]['Payloads Bucket'] = f"serverless-c2-payloads-{id}"
+                if other_bucket['Name'] == f"serverless-c2-webapp-{id}":
+                    deployment_buckets[id]['Webapp Bucket'] = f"serverless-c2-webapp-{id}"
+                    deployment_buckets[id]['Management URL'] = cloudformation_webapp_getoutputs(f'serverless-c2-webapp-{id}')
+    print(json.dumps(deployment_buckets, indent=4))
 
 def list_cloudformation_status():
     response = cloudformation.describe_stacks()
     for stack in response['Stacks']:
         print("Cloudformation Stack: " + stack['StackName'] + " - " + stack['StackStatus'])
 
-def cloudformation_displayconfig(newbucketname):
+def cloudformation_displayconfig(deployment_id):
+    newbucketname = "serverless-c2-deployment-" + deployment_id.split("-")[-1]
     response = cloudformation.describe_stacks(StackName=newbucketname)
     fin = open("./WebApplication/js/config.js", "rt")
     data = fin.read()
@@ -214,17 +227,16 @@ def cloudformation_displayconfig(newbucketname):
         outputkey  = output['OutputKey']
         outputvalue = output['OutputValue']
         data = re.sub(f"{outputkey}: '.*'", f"{outputkey}: '{outputvalue}'", data)
-    deployment_ID = newbucketname.split("-")[-1]
-    data = re.sub("DeploymentID: '.*'", f"DeploymentID: '{deployment_ID}'", data)
+    data = re.sub("DeploymentID: '.*'", f"DeploymentID: '{deployment_id}'", data)
     fin.close()
     print(data)
 
 help = ("Commands:\n"
         "Setup new ServerlessC2                 - build jim@gmail.com\n"
-        "View Cloudformation config.js contents - config serverless-c2-deployment-1qa2ws3edf\n"
+        "View Cloudformation config.js contents - config 1qa2ws3edf\n"
         "List ServerlessC2 Instances            - list\n"
         "View Cloudformation deployment status  - status\n"
-        "Delete ServerlessC2 Instance           - destroy serverless-c2-deployment-1qa2ws3edf")
+        "Delete ServerlessC2 Instance           - destroy 1qa2ws3edf")
 
 def main():
     if len(sys.argv) > 1:
