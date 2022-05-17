@@ -151,34 +151,10 @@ async function sendTask(task) {
     }
 }
 
-//sendTaskAmsi
-async function sendTaskAmsi() {
-    var url = _config.api.ManagementUrl + "sendTask/amsi"
-    const resp = await fetch(url, {
-        "headers": {
-            "Authorization": bearer,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        },
-        "body": JSON.stringify({"hostid":hostid.split("=")[1]}),
-        "method": "POST",
-        "withCredentials": true,
-        "mode": "cors"
-    })
-    const resp2 = await resp.text();
-}
-
-//not sure if we will keep the task splitter. Doesnt really fix the AMSI problem at all.
 function sendTaskHandler(){
-    if (taskSelection.value == "basic-command") {
-        console.log(document.getElementById("inputTask").value)
-        var task = document.getElementById("inputTask").value;
-        sendTask(task);
-    }
-    else if (taskSelection.value == "amsi-bypass") {
-        sendTaskAmsi();
-    }
-
+    console.log(document.getElementById("inputTask").value)
+    var task = document.getElementById("inputTask").value;
+    sendTask(task);
 }
 
 //listens for form submit
