@@ -50,10 +50,10 @@
         <h1 class="text-center">Task Implant</h1>
       </div>
       <form id="implantSendTask">
-        <select class="form-control m-auto w-400" id="select-task">
+        <select class="form-control m-auto w-500" id="select-task">
           <option value="basic-command" selected="selected">Basic Command</option>
           <option value="amsi-rasta-custom">AMSI Bypass</option>
-          <option value="execute-assembly" disabled="disabled">Execute Assembly</option>
+          <option value="execute-assembly">Execute Assembly</option>
           <option value="upload-file" disabled="disabled">Upload File</option>
           <option value="download-file" disabled="disabled">Download File</option>
         </select>
@@ -62,8 +62,8 @@
             <input type="text" hidden class="form-control-plaintext" id="inputHostID"></input>
           </div>
         </div>
-        <div class="text-center">
-          <div class="text-center m-auto w-400" id="basic-command-div">
+        <div>
+          <div class="text-center m-auto w-500" id="basic-command-div">
             <div class="custom-switch d-inline-block mr-10">
               <input type="checkbox" id="switch-full-width" value="">
               <label for="switch-full-width">Full Width</label>
@@ -72,10 +72,25 @@
             <br>
             <textarea class="form-control" id="inputTask" placeholder="whoami"></textarea>
           </div>
+          <div class="m-auto w-500" id="execute-assembly-div" hidden>
+            <div class="form-group d-flex justify-content-between w-500">
+              <button class="btn btn-primary w-175" type="button">Upload Assembly</button>
+              <button class="btn btn-primary w-175" type="button">Browse Uploaded Files</button>
+              <button class="btn btn-primary w-175" type="button">Browse SharpCollection</button>
+            </div>
+            <div class="form-group">
+              <label for="assembly-url" class="m-l">Assembly URL</label>
+              <input class="form-control" placeholder="https://somwebsite.com/Rubeus.exe" id="assembly-url">
+            </div>
+            <div class="form-group">
+              <label for="assembly-arguments" class="">Assembly Arguments</label>
+              <input class="form-control" placeholder="currentluid" id="assembly-arguments">
+            </div>
+          </div>
         </div>
         <br>
         <div class="text-center">
-          <button class="btn btn-primary" type="submit">Send Task</button>
+          <button class="btn btn-primary m-auto w-500" type="submit">Send Task</button>
         </div>
       </form>
     </div>

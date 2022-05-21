@@ -160,6 +160,17 @@ function sendTaskHandler(){
     else if (taskSelection.value == "amsi-rasta-custom") {
         sendTask("amsi-rasta-custom");
     }
+    else if (taskSelection.value == "execute-assembly") {
+        sendTask("execute-assembly");
+        var url = document.getElementById("assembly-url").value;
+        var arguments = document.getElementById("assembly-arguments").value;
+        if (arguments == "") {
+            sendTask("Reflect-Assembly -url " + url);
+        }
+        else {
+            sendTask("Reflect-Assembly -Url " + url + " -Arguments " + arguments);
+        }
+    }
 }
 
 //listens for form submit
@@ -189,16 +200,22 @@ function toggleWidth() {
     }
     else {
         document.getElementById("inputTask").style = null
-        document.getElementById("basic-command-div").setAttribute("class", "text-center m-auto w-400")
+        document.getElementById("basic-command-div").setAttribute("class", "text-center m-auto w-500")
     }
 }
 
 function taskDisplayChange() {
     if (taskSelection.value == "basic-command"){
         document.getElementById("basic-command-div").style.display = "block"
+        document.getElementById("execute-assembly-div").style.display = "none"
+    }
+    else if (taskSelection.value == "execute-assembly"){
+        document.getElementById("execute-assembly-div").style.display = "block"
+        document.getElementById("basic-command-div").style.display = "none"
     }
     else {
         document.getElementById("basic-command-div").style.display = "none"
+        document.getElementById("execute-assembly-div").style.display = "none"
     }
 }
 
