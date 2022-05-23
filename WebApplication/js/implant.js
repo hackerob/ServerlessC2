@@ -61,8 +61,45 @@ function populateCollapse(tableData) {
 
         //does element already exist
         var dataElement = document.getElementById(data);
-        if (dataElement) {
-            console.log("Element " + data + " already exists")
+        if (dataElement && dataElement.children.length == 2) {
+            //console.log(dataElement)
+            //console.log("Element " + data + " already exists")
+        }
+        else if (dataElement && value.commandResponse == undefined) {
+            //Element already exists and no updates
+        }
+        else if (dataElement && value.commandResponse != undefined) {
+            dataElement.getElementsByClassName('text-secondary')[0].className = "text-success"
+            var addDiv = document.createElement('div')
+            addDiv.className = "collapse-content pre-wrap";
+            addDiv.innerHTML = "<pre-wrap>" + basicHTMLEncode(value.commandResponse) + "</pre-wrap>";
+            dataElement.appendChild(addDiv);
+        }
+        else if (value.commandResponse == undefined) {
+            console.log(value.commandResponse)
+            //create details parent
+            var details = document.createElement('details');
+            details.className = "collapse-panel";
+            details.id = data;
+            details.setAttribute("open", true);
+            //let detailsParent = collapse.appendChild(details);
+            let detailsParent = collapse.insertBefore(details, collapse.firstChild);
+
+            //add summary child
+            var addSummary = document.createElement('summary')
+            addSummary.className = "collapse-header";
+            let summaryParent = detailsParent.appendChild(addSummary);
+
+            //add summary content
+            var timeRequested = document.createElement('span');
+            timeRequested.className = "text-primary";
+            timeRequested.innerHTML = "[ " + epoch2human(basicHTMLEncode(data)) + " ]$ ";
+            summaryParent.appendChild(timeRequested);
+            var command = document.createElement('span')
+            command.innerHTML = basicHTMLEncode(value.command);
+            command.className = "text-secondary"
+            command.id = "waiting-task"
+            summaryParent.appendChild(command);            
         }
         else {
             //create details parent
