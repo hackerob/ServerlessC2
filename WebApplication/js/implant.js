@@ -205,7 +205,7 @@ function sendTaskHandler(){
             sendTask("Reflect-Assembly -url " + url);
         }
         else {
-            sendTask("Reflect-Assembly -Url " + url + " -Arguments " + arguments);
+            sendTask("Reflect-Assembly -Url " + url + " -Arguments '" + arguments + "'");
         }
     }
 }
