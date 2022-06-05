@@ -14,6 +14,10 @@ Parameters:
     Type: String
     Description: Enter the S3 Deployment Bucket.
 Resources:
+  PayloadBucket:
+    Type: "Custom::Variable"
+    Properties:
+      Name: !Join [ '-', [ serverless-c2-payloads, !Select [3, !Split ["-", !Ref DeploymentBucket]] ] ]
   #Hosts table
   HostTable:
     Type: AWS::DynamoDB::Table
@@ -123,6 +127,67 @@ Resources:
       Code:
         S3Bucket: !Ref DeploymentBucket
         S3Key: sendTask.zip
+  #
+  # CodeBuild and CodeBuild Role
+  #
+  CodeBuildRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: PayloadBucketPermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - "s3:PutObject"
+                  - "s3:ListBucket"
+                  - "s3:GetBucketAcl"
+                  - "s3:GetBucketLocation"
+                Resource: 
+                  - !GetAtt PayloadBucket.Name
+                  - !Join ['/', [ !GetAtt PayloadBucket.Name, '*']]
+        - PolicyName: CodeBuildPermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - "codebuild:CreateReportGroup"
+                  - "codebuild:CreateReport"
+                  - "codebuild:UpdateReport"
+                  - "codebuild:BatchPutTestCases"
+                  - "codebuild:BatchPutCodeCoverages"
+                Resource: "*"
+  ImplantCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Description: "CodeBuild project to compile the C# implants."
+      Source: 
+        Location: !Join ['/', [ !GetAtt PayloadBucket.Name, Project.zip]]
+        Type: S3  
+      Environment:
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Type: WINDOWS_SERVER_2019_CONTAINER 
+        Image: aws/codebuild/windows-base:2019-1.0-20.11.19
+      Artifacts: 
+        Location: !Join [ '-', [ serverless-c2-payloads, !Select [3, !Split ["-", !Ref DeploymentBucket]] ] ]
+        Name: Compiled
+        OverrideArtifactName: Boolean
+        Type: S3
+      ConcurrentBuildLimit: 1
+      ResourceAccessRole: !GetAtt CodeBuildRole.Arn
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      TimeoutInMinutes: 15
   #
   #API - Implant Portion
   #

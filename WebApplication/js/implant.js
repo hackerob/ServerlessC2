@@ -3,6 +3,8 @@ var hostid = document.location.search
 var url = _config.api.ManagementUrl + hostid
 
 //Setting some global HTML variables
+var refreshTime = document.getElementById('refresh-time').value
+
 var table = document.getElementById('mytable');
 var collapse = document.getElementById('mycollapse');
 var hostIDHeader = document.getElementById('hostID-header');
@@ -161,6 +163,7 @@ async function getJSON() {
     //populateTable(responseJSON);
     populateGeneral(responseJSON);
     populateCollapse(responseJSON);
+    setTimeout(getJSON, document.getElementById('refresh-time').value);
 }
 
 
@@ -215,6 +218,7 @@ const submitTaskForm = document.getElementById('implantSendTask');
 submitTaskForm.addEventListener('submit', function(event){event.preventDefault();sendTaskHandler();});
 
 
+//display functions
 function toggleCollapse() {
     var collection = document.getElementsByClassName("collapse-panel");
     if (document.getElementById('switch-collapse').checked) {
@@ -268,11 +272,4 @@ toggleClicked.onclick = function(){toggleCollapse()};
 toggleSortAge.onclick = function(){alert("Not configured yet")};
 toggleFullWidth.onclick = function(){toggleWidth()};
 
-//refresh every 5 seconds (maybe have this configurable?)
 getJSON();
-setInterval(function(){
-    getJSON();
-}, 5000)
-
-
-
