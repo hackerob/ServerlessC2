@@ -13,11 +13,10 @@ Parameters:
   DeploymentBucket:
     Type: String
     Description: Enter the S3 Deployment Bucket.
-Resources:
   PayloadBucket:
-    Type: "Custom::Variable"
-    Properties:
-      Name: !Join [ '-', [ serverless-c2-payloads, !Select [3, !Split ["-", !Ref DeploymentBucket]] ] ]
+    Type: String
+    Description: Enter the S3 Payload Bucket.
+Resources:
   #Hosts table
   HostTable:
     Type: AWS::DynamoDB::Table
@@ -154,8 +153,8 @@ Resources:
                   - "s3:GetBucketAcl"
                   - "s3:GetBucketLocation"
                 Resource: 
-                  - !GetAtt PayloadBucket.Name
-                  - !Join ['/', [ !GetAtt PayloadBucket.Name, '*']]
+                  - !Ref PayloadBucket
+                  - !Join ['/', [ !GetAtt PayloadBucket, '*']]
         - PolicyName: CodeBuildPermissions
           PolicyDocument:
             Version: "2012-10-17"
@@ -173,14 +172,14 @@ Resources:
     Properties:
       Description: "CodeBuild project to compile the C# implants."
       Source: 
-        Location: !Join ['/', [ !GetAtt PayloadBucket.Name, Project.zip]]
+        Location: !Join ['/', [ !Ref PayloadBucket, Project.zip]]
         Type: S3  
       Environment:
         ComputeType: BUILD_GENERAL1_MEDIUM
         Type: WINDOWS_SERVER_2019_CONTAINER 
         Image: aws/codebuild/windows-base:2019-1.0-20.11.19
       Artifacts: 
-        Location: !Join [ '-', [ serverless-c2-payloads, !Select [3, !Split ["-", !Ref DeploymentBucket]] ] ]
+        Location: !Ref PayloadBucket
         Name: Compiled
         OverrideArtifactName: Boolean
         Type: S3

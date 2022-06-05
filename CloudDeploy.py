@@ -39,8 +39,6 @@ def upload_deployment_bucket():
     return newbucket
 
 def upload_payload_bucket(newbucket):
-    string_id = newbucket.split("-")[-1]
-    newbucket = 'serverless-c2-payloads-' + string_id
     response = s3.create_bucket(Bucket=newbucket)
     print("Created new payload bucket: " + response["Location"])
 
@@ -100,7 +98,7 @@ def delete_bucket(bucketname):
         return False
 
 #Cloudformation functions
-def cloudformation_deploy(newbucketname, email):
+def cloudformation_deploy(newbucketname, payloadbucketname, email):
     response = cloudformation.create_stack(
         StackName=newbucketname,
         TemplateURL='https://' + newbucketname + '.s3.amazonaws.com/c2-deployment.yaml',
@@ -111,6 +109,9 @@ def cloudformation_deploy(newbucketname, email):
             },            {
                 'ParameterKey': 'DeploymentBucket',
                 'ParameterValue': newbucketname
+            },            {
+                'ParameterKey': 'PayloadBucket',
+                'ParameterValue': payloadbucketname
             },
         ],
         Capabilities=[
@@ -175,10 +176,11 @@ def cloudformation_delete(bucketname):
 #Main Commands
 def build_c2(email):
     newbucketname = upload_deployment_bucket()
-    upload_payload_bucket(newbucketname)
     webapp_bucket = 'serverless-c2-webapp-' + newbucketname.split("-")[-1]
+    payload_bucket = 'serverless-c2-payloads-' + newbucketname.split("-")[-1]
+    upload_payload_bucket(payload_bucket)
     cloudformation_webapp_deploy(newbucketname, webapp_bucket)
-    cloudformation_deploy(newbucketname, email)
+    cloudformation_deploy(newbucketname, payload_bucket email)
     cloudformation_getstatus(newbucketname)
     cloudformation_getoutputs(newbucketname)
     uploadto_webappbucket(webapp_bucket)
