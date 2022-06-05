@@ -153,8 +153,8 @@ Resources:
                   - "s3:GetBucketAcl"
                   - "s3:GetBucketLocation"
                 Resource: 
-                  - !Ref PayloadBucket
-                  - !Join ['/', [ !Ref PayloadBucket, '*']]
+                  - !Join [':::', [ arn:aws:s3 , !Ref PayloadBucket ] ]
+                  - !Join ['/', [  !Join [':::', [ arn:aws:s3 , !Ref PayloadBucket ] ], '*']]
         - PolicyName: CodeBuildPermissions
           PolicyDocument:
             Version: "2012-10-17"
