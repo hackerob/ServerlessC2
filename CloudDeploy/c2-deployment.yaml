@@ -154,7 +154,7 @@ Resources:
                   - "s3:GetBucketLocation"
                 Resource: 
                   - !Ref PayloadBucket
-                  - !Join ['/', [ !GetAtt PayloadBucket, '*']]
+                  - !Join ['/', [ !Ref PayloadBucket, '*']]
         - PolicyName: CodeBuildPermissions
           PolicyDocument:
             Version: "2012-10-17"
