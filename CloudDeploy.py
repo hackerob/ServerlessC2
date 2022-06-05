@@ -180,7 +180,7 @@ def build_c2(email):
     payload_bucket = 'serverless-c2-payloads-' + newbucketname.split("-")[-1]
     upload_payload_bucket(payload_bucket)
     cloudformation_webapp_deploy(newbucketname, webapp_bucket)
-    cloudformation_deploy(newbucketname, payload_bucket email)
+    cloudformation_deploy(newbucketname, payload_bucket, email)
     cloudformation_getstatus(newbucketname)
     cloudformation_getoutputs(newbucketname)
     uploadto_webappbucket(webapp_bucket)
