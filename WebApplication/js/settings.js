@@ -23,11 +23,11 @@ function populateTable(tableData, role) {
         //enable vs disable
         if (value.Enabled) {
             var statusButton = '<button class="btn btn-square btn-secondary rounded-circle" data-toggle="tooltip" data-title="Disable User" type="button" onclick=disableUser("' + basicHTMLEncode(value.Username) + '");>&#128721;</button>'
-            var deleteButton = '<button disabled class="btn btn-square btn-danger rounded-circle" data-toggle="tooltip" data-title="Disable user before deleting!" type="button" onclick=deleteUser("' + basicHTMLEncode(value.Username) + '");location.reload();>&#10006;</button>'
+            var deleteButton = '<button disabled class="btn btn-square btn-danger rounded-circle" data-toggle="tooltip" data-title="Disable user before deleting!" type="button" onclick=deleteUser("' + basicHTMLEncode(value.Username) + '");location.reload();>&#128465;</button>'
         }
         else {
             var statusButton = '<button class="btn btn-square btn-success rounded-circle" data-toggle="tooltip" data-title="Enable User" type="button" onclick=enableUser("' + basicHTMLEncode(value.Username) + '");>&#10004;</button>'
-            var deleteButton = '<button class="btn btn-square btn-danger rounded-circle" data-toggle="tooltip" data-title="Delete User" type="button" onclick=deleteUser("' + basicHTMLEncode(value.Username) + '");>&#10006;</button>'
+            var deleteButton = '<button class="btn btn-square btn-danger rounded-circle" data-toggle="tooltip" data-title="Delete User" type="button" onclick=deleteUser("' + basicHTMLEncode(value.Username) + '");>&#128465;</button>'
         }
         //make admin vs remove admin
         var makeAdminButton = '<button class="btn btn-square btn-primary rounded-circle" data-toggle="tooltip" data-title="Make Admin" type="button" onclick=makeAdmin("' + basicHTMLEncode(value.Username) + '");>&#9819;</button>';

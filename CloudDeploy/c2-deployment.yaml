@@ -149,6 +149,8 @@ Resources:
               - Effect: Allow
                 Action: 
                   - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
                   - "s3:ListBucket"
                   - "s3:GetBucketAcl"
                   - "s3:GetBucketLocation"
@@ -161,18 +163,33 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: 
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                  - "s3:GetBucketAcl"
+                  - "s3:GetBucketLocation"
+                Resource: !Sub arn:aws:s3:::codepipeline-${AWS::Region}-*
+              - Effect: Allow
+                Action: 
                   - "codebuild:CreateReportGroup"
                   - "codebuild:CreateReport"
                   - "codebuild:UpdateReport"
                   - "codebuild:BatchPutTestCases"
                   - "codebuild:BatchPutCodeCoverages"
-                Resource: "*"
+                Resource: !Sub arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/*
   ImplantCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
+      Name: !Join [ '-', [ DotnetImplantBuilder, !Select [3, !Split ["-", !Ref DeploymentBucket]] ] ]
       Description: "CodeBuild project to compile the C# implants."
       Source: 
-        Location: !Join ['/', [ !Ref PayloadBucket, Project.zip]]
+        Location: !Join ['/', [ !Ref PayloadBucket, DotnetVanilla.zip]]
         Type: S3  
       Environment:
         ComputeType: BUILD_GENERAL1_MEDIUM
@@ -181,7 +198,6 @@ Resources:
       Artifacts: 
         Location: !Ref PayloadBucket
         Name: Compiled
-        OverrideArtifactName: Boolean
         Type: S3
       ConcurrentBuildLimit: 1
       ResourceAccessRole: !GetAtt CodeBuildRole.Arn
@@ -512,6 +528,7 @@ Resources:
                 Action:
                   - "s3:GetObject"
                   - "s3:ListBucket"
+                  - "codebuild:StartBuild"
                 Resource: "*"
   ServerlessC2AdminRole:
     Type: "AWS::IAM::Role"
@@ -555,6 +572,7 @@ Resources:
                 Action:
                   - "s3:GetObject"
                   - "s3:ListBucket"
+                  - "codebuild:StartBuild"
                 Resource: "*"
               - Effect: "Allow"
                 Action:

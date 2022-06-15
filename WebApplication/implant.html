@@ -54,8 +54,6 @@
           <option value="basic-command" selected="selected">Basic Command</option>
           <option value="amsi-rasta-custom">AMSI Bypass</option>
           <option value="execute-assembly">Execute Assembly</option>
-          <option value="upload-file" disabled="disabled">Upload File</option>
-          <option value="download-file" disabled="disabled">Download File</option>
         </select>
         <div class="form-group row">
           <div class="col-sm-10">
@@ -73,14 +71,16 @@
             <textarea class="form-control" id="inputTask" placeholder="whoami"></textarea>
           </div>
           <div class="m-auto w-500" id="execute-assembly-div" hidden>
+            <!--
             <div class="form-group d-flex justify-content-between w-500">
               <button class="btn btn-primary w-175" type="button">Upload Assembly</button>
               <button class="btn btn-primary w-175" type="button">Browse Uploaded Files</button>
-              <button class="btn btn-primary w-175" type="button">Browse SharpCollection</button>
+              <button class="btn btn-primary w-175" disabled type="button" id="sharp-collection">Browse SharpCollection</button>
             </div>
+            -->
             <div class="form-group">
               <label for="assembly-url" class="m-l">Assembly URL</label>
-              <input class="form-control" placeholder="https://somwebsite.com/Rubeus.exe" id="assembly-url">
+              <input class="form-control" placeholder="https://somewebsite.com/Rubeus.exe" id="assembly-url">
             </div>
             <div class="form-group">
               <label for="assembly-arguments" class="">Assembly Arguments</label>
@@ -103,6 +103,21 @@
       <div class="custom-switch d-inline-block mr-10">
         <input type="checkbox" id="switch-oldest" value="">
         <label for="switch-oldest">Oldest First</label>
+      </div>
+      <div class="d-inline-block mr-10">
+        <select class="form-control m-auto" id="refresh-time">
+          <option value="1000">Refresh every second</option>
+          <option value="3000">Refresh every 3 seconds</option>
+          <option value="5000" selected="selected">Refresh every 5 seconds</option>
+          <option value="15000">Refresh every 15 seconds</option>
+          <option value="60000">Refresh every 60 seconds</option>
+        </select>
+      </div>
+      <div class="d-inline-block mr-10">
+        <span class="badge badge-primary badge-pill" id="amsi-bypass-capability" style="display:none">AMSI-Bypassed</span>
+      </div>
+      <div class="d-inline-block mr-10">
+        <span class="badge badge-primary badge-pill" id="execute-assembly-capability" style="display:none">Execute-Assembly Loaded</span>
       </div>
       <br>
       <br>

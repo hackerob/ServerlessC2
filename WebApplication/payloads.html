@@ -36,14 +36,20 @@
       <h1 class="text-center">Payload Lab</h1>
     </div>
     <div class="w-500 m-auto">
-        <div class="form-group">
-          <label for="selectedPayload" class="required">Select Payload</label>
-          <select class="form-control" id="selectedPayload"></select>
+        <div class="custom-switch mr-10">
+          <input type="checkbox" id="switch-compiled" value="">
+          <label for="switch-compiled">Compiled Languages</label>
         </div>
+        <br>
         <div class="form-group">
           <label for="selectedListener" class="required">Select Listener</label>
           <select class="form-control" id="selectedListener"></select>
         </div>
+        <div class="form-group">
+          <label for="selectedPayload" class="required">Select Payload</label>
+          <select class="form-control" id="selectedPayload"></select>
+        </div>
+        <input class="btn btn-primary btn-block" id="compilePayload" type="submit" value="Compile" style="display:none">
         <input class="btn btn-primary btn-block" id="loadPayload" type="submit" value="Load File">
         <br>
         <input class="btn btn-primary btn-block" id="downloadPayload" type="submit" value="Download File">

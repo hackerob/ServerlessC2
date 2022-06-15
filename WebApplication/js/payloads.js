@@ -1,5 +1,7 @@
-var s3 = new AWS.S3();
+var s3 = new AWS.S3({ signatureVersion: 'v4' });
 var apigateway = new AWS.APIGateway();
+var codebuild = new AWS.CodeBuild({ signatureVersion: 'v4' });
+
 
 //view APIs
 function listListeners() {
@@ -53,6 +55,50 @@ function listObjects() {
     });
 }
 
+function populateOptions(data) {
+    console.log(data.Contents);
+    var filename = document.getElementById("selectedPayload");
+    filename.replaceChildren();
+    for (var result in data.Contents) {
+        if (toggleClicked.checked && !data.Contents[result].Key.endsWith('.exe')) {
+            continue
+        }
+        if (!toggleClicked.checked && data.Contents[result].Key.endsWith('.exe')) {
+            continue
+        }
+        if (!toggleClicked.checked && data.Contents[result].Key.endsWith('.zip')) {
+            continue
+        }
+        var option = document.createElement('option')
+        option.innerHTML = data.Contents[result].Key;
+        filename.appendChild(option);
+    }
+}
+
+
+//compile function
+function compilePayload(action) {
+    var listener = document.getElementById("selectedListener").value;
+    var listener_id = listener.split('/')[1].split('.')[0]
+    var params = {
+        projectName: 'DotnetImplantBuilder-' + _config.DeploymentID,
+        environmentVariablesOverride: [
+            {
+              name: 'LISTENER_URL', /* required */
+              value: listener, /* required */
+            },
+        ],
+    };
+    codebuild.startBuild(params, function(err, data) {
+        if (err) {
+            console.log(err, err.stack); alert(err); // an error occurred
+        }
+        else {
+            console.log(data); alert("Build Started (this could take up to 5 minutes)");        // successful response
+        }
+    });
+}
+
 //get object
 function getObject(action) {
     var filename = document.getElementById("selectedPayload").value;
@@ -65,10 +111,14 @@ function getObject(action) {
         if (err) console.log(err, err.stack); // an error occurred
         else {
             var dataBody = String(data.Body);
-            console.log(dataBody);
-            var edited = dataBody.replace('AWS_URL_LISTENER_HERE',listener)
-            if (action === "download") {
+            if (!filename.endsWith('.exe')) {
+                var edited = dataBody.replace('AWS_URL_LISTENER_HERE',listener)
+            }
+            else {
+                var edited = s3.getSignedUrl('getObject', params);
+            }
 
+            if (action === "download") {
                 download(filename, edited);
             }
             else {
@@ -86,25 +136,42 @@ function displayCode(data) {
     hljs.highlightAll();
 }
 
-function populateOptions(data) {
-    console.log(data.Contents);
-    for (var result in data.Contents) {
-        var filename = document.getElementById("selectedPayload");
-        var option = document.createElement('option')
-        option.innerHTML = data.Contents[result].Key;
-        filename.appendChild(option);
-    }
-}
 
 function download(filename, text) {
     var element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    if (filename.endsWith('.exe')) {
+        element.setAttribute('href', text);
+    }
+    else {
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    }
     element.setAttribute('download', filename);
     element.style.display = 'none';
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
 }
+
+function toggleCompiled() {
+    if (toggleClicked.checked) {
+        document.getElementById("compilePayload").style.display = "block"
+        document.getElementById("loadPayload").style.display = "none"
+        listObjects();
+    }
+    else {
+        document.getElementById("compilePayload").style.display = "none"
+        document.getElementById("loadPayload").style.display = "block"
+        listObjects();
+    }
+}
+
+const toggleClicked = document.getElementById('switch-compiled');
+toggleClicked.onclick = function(){toggleCompiled()};
+
+//Main Functions
+
+const compilePayloadHTML = document.getElementById('compilePayload');
+compilePayloadHTML.onclick = function(){compilePayload()};
 
 const selectPayloadHTML = document.getElementById('loadPayload');
 selectPayloadHTML.onclick = function(){getObject()};
