@@ -16,8 +16,8 @@ Serverless C2 is a completely serverless command and control platform utilizing 
 
 ## To Do
 - [X] Python Implant
-- [ ] PowerShell Dotnet Reflection
-- [ ] C-Sharp Implant
+- [X] PowerShell Dotnet Reflection
+- [X] C-Sharp Implant
 - [ ] PE Reflection
 - [ ] Drag-and-drop public file hosting
 - [ ] Ability to archive/delete implants (dashboard.html)
