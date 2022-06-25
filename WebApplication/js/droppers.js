@@ -42,6 +42,11 @@ function populateListeners(api, subname) {
     var option = document.createElement('option')
     option.innerHTML = url;
     listener.appendChild(option);
+    //Populate compile listener last as well
+    var compilelistener = document.getElementById("compileListener");
+    var option = document.createElement('option')
+    option.innerHTML = url;
+    compilelistener.appendChild(option);
 }
 
 //list objects in bucket
@@ -60,13 +65,7 @@ function populateOptions(data) {
     var filename = document.getElementById("selectedPayload");
     filename.replaceChildren();
     for (var result in data.Contents) {
-        if (toggleClicked.checked && !data.Contents[result].Key.endsWith('.exe')) {
-            continue
-        }
-        if (!toggleClicked.checked && data.Contents[result].Key.endsWith('.exe')) {
-            continue
-        }
-        if (!toggleClicked.checked && data.Contents[result].Key.endsWith('.zip')) {
+        if (data.Contents[result].Key.endsWith('.zip')) {
             continue
         }
         var option = document.createElement('option')
@@ -77,8 +76,8 @@ function populateOptions(data) {
 
 
 //compile function
-function compilePayload(action) {
-    var listener = document.getElementById("selectedListener").value;
+function compileDropper(action) {
+    var listener = document.getElementById("compileListener").value;
     var listener_id = listener.split('/')[1].split('.')[0]
     var params = {
         projectName: 'DotnetImplantBuilder-' + _config.DeploymentID,
@@ -130,7 +129,7 @@ function getObject(action) {
 
 //place payload contents into the page
 function displayCode(data) {
-    var payloadHTML = document.getElementById('payload');
+    var payloadHTML = document.getElementById('dropper');
     //this will need to be sanitized OR only allow admins to upload templates
     payloadHTML.innerHTML = data
     hljs.highlightAll();
@@ -154,30 +153,28 @@ function download(filename, text) {
 
 function toggleCompiled() {
     if (toggleClicked.checked) {
-        document.getElementById("compilePayload").style.display = "block"
+        document.getElementById("compileDropper").style.display = "block"
         document.getElementById("loadPayload").style.display = "none"
         listObjects();
     }
     else {
-        document.getElementById("compilePayload").style.display = "none"
+        document.getElementById("compileDropper").style.display = "none"
         document.getElementById("loadPayload").style.display = "block"
         listObjects();
     }
 }
 
-const toggleClicked = document.getElementById('switch-compiled');
-toggleClicked.onclick = function(){toggleCompiled()};
 
 //Main Functions
 
-const compilePayloadHTML = document.getElementById('compilePayload');
-compilePayloadHTML.onclick = function(){compilePayload()};
+const compileDropperHTML = document.getElementById('compileDropper');
+compileDropperHTML.onclick = function(){compileDropper()};
 
 const selectPayloadHTML = document.getElementById('loadPayload');
 selectPayloadHTML.onclick = function(){getObject()};
 
 const downloadPayloadHTML = document.getElementById('downloadPayload');
-downloadPayloadHTML.onclick = function(){getObject("download")};
+downloadPayloadHTML.onclick = function(){getObject('download')};
 
 
 //populate select payload dropdown
