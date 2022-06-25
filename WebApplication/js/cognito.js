@@ -31,7 +31,7 @@ function login(event){
             console.log(result);
             var accessToken = result.getAccessToken().getJwtToken();
             console.log('Authentication successful', accessToken);
-            window.location = './dashboard.html';
+            window.location = './implants.html';
         },
 
         onFailure: function(err) {
@@ -62,7 +62,7 @@ function resetPasswordRequired(event) {
             console.log(result);
             var accessToken = result.getAccessToken().getJwtToken();
             console.log('Authentication successful', accessToken);
-            window.location = './dashboard.html';
+            window.location = './implants.html';
         },
         onFailure: function(err) {
             console.log(JSON.stringify(err));
