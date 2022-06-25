@@ -13,8 +13,8 @@ Resources:
     Properties:
       BucketName: !Ref BucketName
       WebsiteConfiguration:
-        ErrorDocument: 'dashboard.html'
-        IndexDocument: 'dashboard.html'
+        ErrorDocument: 'implants.html'
+        IndexDocument: 'implants.html'
 
   # Configure the bucket as a CloudFront Origin
   ReadPolicy:
@@ -44,7 +44,7 @@ Resources:
         CustomErrorResponses:
           - ErrorCode: 403 # not found
             ResponseCode: 404
-            ResponsePagePath: '/dashboard.html'
+            ResponsePagePath: '/implants.html'
         DefaultCacheBehavior:
           AllowedMethods:
             - GET
@@ -65,7 +65,7 @@ Resources:
           TargetOriginId: s3origin
           ViewerProtocolPolicy: 'allow-all'
         # This DefaultRootObject configuration is not enough.
-        DefaultRootObject: '/dashboard.html'
+        DefaultRootObject: '/implants.html'
         Enabled: true
         HttpVersion: http2
         Origins:
